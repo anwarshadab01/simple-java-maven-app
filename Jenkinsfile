@@ -1,36 +1,42 @@
 pipeline {
-    agent any
-    
-    environment {
-        GIT_VER = getSCMVer()
-        IMAGE = readMavenPom().getArtifactId()
-        VERSION = readMavenPom().getVersion()
-    }
-    stages {
+  agent any
+  stages {
+    stage('Github Pull') {
+      parallel {
         stage('Github Pull') {
-            steps {
-                echo 'Pulling from git'
-                echo "Git version is $GIT_VER"
-                git 'https://github.com/devops-max/simple-java-maven-app'
-            }
+          steps {
+            echo 'Pulling from git'
+            echo "Git version is $GIT_VER"
+            git 'https://github.com/devops-max/simple-java-maven-app'
+          }
         }
-        stage('Maven Build') {
-            steps {
-                echo 'Building Project'
-                sh 'mvn clean package'
-            }
+
+        stage('Test-1') {
+          steps {
+            sh 'echo \'Hello test-1\''
+          }
         }
-        stage('Create Docker Image') {
-            steps {
-                sh 'docker build . -t sampleapp:${VERSION}'
-            }
-        }
+
+      }
     }
+
+    stage('Maven Build') {
+      steps {
+        echo 'Building Project'
+        sh 'mvn clean package'
+      }
+    }
+
+    stage('Create Docker Image') {
+      steps {
+        sh 'docker build . -t sampleapp:${VERSION}'
+      }
+    }
+
+  }
+  environment {
+    GIT_VER = getSCMVer()
+    IMAGE = readMavenPom().getArtifactId()
+    VERSION = readMavenPom().getVersion()
+  }
 }
-
-
-def getSCMVer() {
-    def gitVer = sh returnStdout: true, script: 'git --version'
-    return gitVer 
-}
-
